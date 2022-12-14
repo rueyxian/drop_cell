@@ -1,0 +1,9 @@
+[package]
+name = "drop_cell"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+drop_cell_macros = { path = "../drop_cell_macros" }
+
+crossbeam = "0.8.2"
