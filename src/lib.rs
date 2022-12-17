@@ -1,3 +1,7 @@
+#![no_std]
+#![deny(rustdoc::broken_intra_doc_links)]
+#![warn(missing_docs)]
+
 //! An alternative way of implementing [`Drop`] in Rust.
 //!
 //! ## Overview
@@ -96,8 +100,6 @@
 //! [wiki_raii]: https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization  
 //! [wiki_lock]: https://en.wikipedia.org/wiki/Lock_(computer_science)
 //! [wiki_ref_count]: https://en.wikipedia.org/wiki/Reference_counting
-
-#![no_std]
 
 /// A macro to defer execution until the end of the stack frame.
 ///
