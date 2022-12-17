@@ -1,55 +1,46 @@
 # drop_cell
-
-An alternative way of implementing `Drop` in Rust.
+An alternative way of implementing [`Drop`](https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html) in Rust.
 
 ## Overview
-
 This library provides the `defer!` macro to defer execution until the end of the stack frame.
 
 The `defer!` macro emulates [Golang Defer statements](https://go.dev/ref/spec#Defer_statements).
-
 ```rust
-drop_cell::defer!(println!("world"));
+defer!(println!("world"));
 println!("hello");
 return;
 println!("unreachable");
 ```
 
 Output:
-
 ```markdown
 hello
 world
-```
-
+````
 ## Borrowing rules
-
 The following code won't compile.
-
 ```rust
     let mut v = vec![1, 2];
     defer!(assert_eq!(v, &[1, 2, 3]));
-//                    ┗━ immutable borrow occurs here ━━━━━━━━━━┓
-    v.push(3); //                                               ┃
-//  ┗━ mutable borrow occurs here                               ┃
-//                                                              ┃
-// immutable borrow will be used at the end of the stack frame ━┛
+//                    └─ immutable borrow occurs here ──────────┐
+    v.push(3); //                                               │
+//  └─ mutable borrow occurs here                               │
+//                                                              │
+// immutable borrow will be used at the end of the stack frame ─┘
 ```
 
-We want to run `assert_eq!(v, &[1, 2, 3])` at the end of the stack frame, but it breaks the [borrowing rules]([References and Borrowing - The Rust Programming Language](https://doc.rust-lang.org/stable/book/ch04-02-references-and-borrowing.html#mutable-references).
+We want to run `assert_eq!(v, &[1, 2, 3])` at the end of the stack frame, but it breaks the [borrowing rules](https://doc.rust-lang.org/stable/book/ch04-02-references-and-borrowing.html#mutable-references).
 
 To work around, we need to pass `v` into `defer!`.
-
 ```rust
     let v = vec![1, 2];
-//      ┗━ consumes it ━┓
-//         ┏━━━━━━━━━━━━┛
+//      └─ consumes it ─┐
+//         ┌────────────┘
     defer!(v => assert_eq!(v, &[1, 2, 3]));        
     v.push(3);
 ```
 
 ## Example
-
 ```rust
 use drop_cell::defer;
 use std::io::Write;
@@ -93,12 +84,9 @@ fn bind() {
 ```
 
 ## When and when not
-
 ###### When to use
-
 - When you want a [Finalizer](https://en.wikipedia.org/wiki/Finalizer) but reluctant to create a `struct` for it.
 
 ###### When NOT to use
-
-- When [RAII]([Resource acquisition is initialization - Wikipedia](https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization)) pattern is preferable. e.g. Lock Guard, Reference Counting.
+- When [RAII](https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization) pattern is preferable. e.g. [Lock](https://en.wikipedia.org/wiki/Lock_(computer_science)) and [Reference Counting](https://en.wikipedia.org/wiki/Reference_counting).
 - When the code is written inside a method, using `defer!` might complicate the code.

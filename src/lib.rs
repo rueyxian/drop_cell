@@ -1,12 +1,12 @@
-//! An alternative way of implementing `Drop` in Rust.
+//! An alternative way of implementing [`Drop`] in Rust.
 //!
 //! ## Overview
-//! This library provides the `defer!` macro to defer execution until the end of the stack frame.
+//! This library provides the [`defer!`] macro to defer execution until the end of the stack frame.
 //!
-//! The `defer!` macro emulates [Golang Defer statements][golang_defer].
+//! The [`defer!`] macro emulates [Golang Defer statements][golang_defer].
 //!
 //! ```rust
-//! drop_cell::defer!(println!("world"));
+//! defer!(println!("world"));
 //! println!("hello");
 //! return;
 //! println!("unreachable");
@@ -23,19 +23,19 @@
 //! ```rust
 //!     let mut v = vec![1, 2];
 //!     defer!(assert_eq!(v, &[1, 2, 3]));
-//! //                    ┗━ immutable borrow occurs here ━━━━━━━━━━┓
-//!     v.push(3); //                                               ┃
-//! //  ┗━ mutable borrow occurs here                               ┃
-//! //                                                              ┃
-//! // immutable borrow will be used at the end of the stack frame ━┛
+//! //                    └─ immutable borrow occurs here ──────────┐
+//!     v.push(3); //                                               │
+//! //  └─ mutable borrow occurs here                               │
+//! //                                                              │
+//! // immutable borrow will be used at the end of the stack frame ─┘
 //! ```
-//! We want to run `assert_eq!(v, &[1, 2, 3])` at the end of the stack frame, but it breaks the [borrowing rules][mutable_references].
+//! We want to run `assert_eq!(v, &[1, 2, 3])` at the end of the stack frame, but it breaks the [borrowing rules][book_mut_ref].
 //!
-//! To work around, we need to pass `v` into `defer!`.
+//! To work around, we need to pass `v` into [`defer!`].
 //! ```rust
 //!     let v = vec![1, 2];
-//! //      ┗━ consumes it ━┓
-//! //         ┏━━━━━━━━━━━━┛
+//! //      └─ consumes it ─┐
+//! //         ┌────────────┘
 //!     defer!(v => assert_eq!(v, &[1, 2, 3]));        
 //!     v.push(3);
 //! ```
@@ -87,14 +87,15 @@
 //! - When you want a [Finalizer][wiki_finalizer] but reluctant to create a `struct` for it.
 //!
 //! ###### When NOT to use
-//! - When [RAII][wiki_raii] pattern is preferable. e.g. Lock Guard, Reference Counting.
-//! - When the code is written inside a method, using `defer!` might complicate the code.
+//! - When [RAII][wiki_raii] pattern is preferable. e.g. [Lock][wiki_lock] and [Reference Counting][wiki_ref_count].
+//! - When the code is written inside a method, using [`defer!`] might complicate the code.
 //!
 //! [golang_defer]: https://go.dev/ref/spec#Defer_statements
-//! [mutable_references]: https://doc.rust-lang.org/stable/book/ch04-02-references-and-borrowing.html#mutable-references
+//! [book_mut_ref]: https://doc.rust-lang.org/stable/book/ch04-02-references-and-borrowing.html#mutable-references
 //! [wiki_finalizer]: https://en.wikipedia.org/wiki/Finalizer
 //! [wiki_raii]: https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization  
-//!
+//! [wiki_lock]: https://en.wikipedia.org/wiki/Lock_(computer_science)
+//! [wiki_ref_count]: https://en.wikipedia.org/wiki/Reference_counting
 
 #![no_std]
 
@@ -102,30 +103,30 @@
 ///
 /// No argument:
 /// ```rust
-/// // body  ━━━━━┓
+/// // body ──────┐
 ///     defer! { ... };
 /// ```
 /// Single argument:
 /// ```rust
-/// // body  ━━━━━━━━━━┓
-/// // ident ━━━━┓     ┃
+/// //     body ───────┐
+/// // ident ────┐     │
 ///     defer! { v => ... };
 /// ```
 /// Multiple arguments:
 /// ```rust
-/// // body    ━━━━━━━━━━━━━┓
-/// // ident 2 ━━━━━━┓      ┃
-/// // ident 1 ━━┓   ┃      ┃
+/// //         body ────────┐
+/// //     ident ────┐      │
+/// // ident ────┐   │      │
 ///     defer! { v1, v2 => ... };
 /// ```
 /// Bindings:
 /// ```rust
-/// //  body   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-/// //  expr 3 ━━━━━━━━━━━━━━━━━━━━━━━┓        ┃
-/// // ident 3 ━━━━━━━━━━━━━━━━┓      ┃        ┃
-/// //  expr 2 ━━━━━━━━━━━━┓   ┃      ┃        ┃
-/// // ident 2 ━━━━━━┓     ┃   ┃      ┃        ┃
-/// // ident 1 ━━┓   ┃     ┃   ┃      ┃        ┃
+/// //             body ───────────────────────┐
+/// //         expr ──────────────────┐        │
+/// //         ident ──────────┐      │        │
+/// //     expr ───────────┐   │      │        │
+/// //     ident ────┐     │   │      │        │
+/// // ident ────┐   │     │   │      │        │
 ///     defer! { v1, v2 @ foo, v3 @ vec![] => ... };
 /// ```
 #[macro_export]
@@ -143,14 +144,14 @@ macro_rules! defer {
 
 /// Not intended for use at the client level.
 ///
-/// Use `drop_cell::defer!` macro instead.
+/// Use [`defer!`] macro instead.
 #[doc(hidden)]
 pub mod __internal {
     use core::mem::MaybeUninit;
 
     /// Not intended for use at the client level.
     ///
-    /// Use `drop_cell::defer!` macro instead.
+    /// Use [`defer!`] macro instead.
     #[doc(hidden)]
     #[macro_export]
     macro_rules! __defer {
@@ -176,7 +177,7 @@ pub mod __internal {
 
     /// Not intended for use at the client level.
     ///
-    /// Use `drop_cell::defer!` macro instead.
+    /// Use [`defer!`] macro instead.
     #[doc(hidden)]
     pub struct __DropCell<T, F: FnOnce(&mut T)> {
         args: T,
@@ -185,7 +186,7 @@ pub mod __internal {
     impl<T, F: FnOnce(&mut T)> __DropCell<T, F> {
         /// Not intended for use at the client level.
         ///
-        /// Use `drop_cell::defer!` macro instead.
+        /// Use [`defer!`] macro instead.
         #[doc(hidden)]
         pub fn __new(args: T, f: F) -> Self {
             let f = MaybeUninit::new(f);
@@ -193,7 +194,7 @@ pub mod __internal {
         }
         /// Not intended for use at the client level.
         ///
-        /// Use `drop_cell::defer!` macro instead.
+        /// Use [`defer!`] macro instead.
         #[doc(hidden)]
         pub fn __args_mut(&mut self) -> &mut T {
             &mut self.args
