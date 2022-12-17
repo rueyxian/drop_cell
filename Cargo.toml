@@ -1,0 +1,9 @@
+[package]
+name = "drop_cell"
+description = "An alternative way of implementing `Drop`"
+version = "0.0.0"
+edition = "2021"
+license = "MIT"
+keywords = ["macros", "drop", "no_std"]
+readme = "README.md"
+authors = ["rueyxian <yrueyxian@gmail.com>"]
